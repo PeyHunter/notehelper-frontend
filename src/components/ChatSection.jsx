@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 
 const buttonStyle = {
   background: "white",
@@ -9,6 +9,7 @@ const buttonStyle = {
   cursor: "pointer",
   fontWeight: "500",
   transition: "all 0.3s ease",
+  outline: "none",
 };
 
 const hoverColor = "#8C3A0E";
@@ -21,58 +22,69 @@ export default function ChatSection({
   chatHistory,
   loading,
 }) {
+  const buttonRef = useRef(null);
+
   if (!fileUploaded) return null;
 
-  return (
-    <div
-      style={{
-        flex: 1,
-        opacity: fileUploaded ? 1 : 0,
-        transform: fileUploaded ? "translateX(0)" : "translateX(50px)",
-        transition: "all 0.6s ease",
-        paddingRight: "2rem",
-        paddingLeft: "1rem",
-      }}
-    >
+  const triggerSend = () => {
+    if (!loading && input.trim().length > 0) {
+      handleSend();
+
+      // Klik-animation
+      if (buttonRef.current) {
+        buttonRef.current.style.transform = "scale(0.9)";
+        setTimeout(() => {
+          buttonRef.current.style.transform = "scale(1)";
+        }, 150);
+      }
+    }
+  };
+return (
+  <div
+    style={{
+      flex: 1,
+      paddingRight: "2rem",
+      paddingLeft: "1rem",
+      background: "white",
+      zIndex: 5,
+    }}
+  >
       <h2 style={{ color: "#581F18" }}>Ask AI about your notes</h2>
 
-      {/* --- TEXTAREA --- */}
       <textarea
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
-            handleSend();
+            triggerSend();
           }
         }}
-        rows="5"
+        rows="4"
         style={{
           width: "100%",
           padding: "12px",
           fontFamily: "monospace",
           fontSize: "1rem",
-          border: "1px solid #F18805", // consistent orange
+          border: "1px solid #F18805",
           borderRadius: "10px",
           outline: "none",
           color: "#581F18",
           transition: "all 0.3s ease",
-          boxShadow: "0 0 0 rgba(0,0,0,0)",
+          resize: "none",
         }}
+        placeholder="Ask something about these notes..."
         onFocus={(e) => {
           e.target.style.borderColor = "#8C3A0E";
-          e.target.style.boxShadow = "0 0 6px rgba(140, 58, 14, 0.3)";
         }}
         onBlur={(e) => {
           e.target.style.borderColor = "#F18805";
-          e.target.style.boxShadow = "0 0 0 rgba(0,0,0,0)";
         }}
-        placeholder="Ask something about these notes..."
       />
 
-      {/* --- SEND BUTTON --- */}
       <button
-        onClick={handleSend}
+        ref={buttonRef}
+        onClick={triggerSend}
         disabled={loading || input.trim().length === 0}
         style={{ ...buttonStyle, marginTop: "1rem" }}
         onMouseEnter={(e) => {
@@ -86,32 +98,35 @@ export default function ChatSection({
           e.target.style.borderColor = "#F18805";
         }}
       >
-        ↑
+        {loading ? "Thinking..." : "↑ Send"}
       </button>
 
-      {/* --- CHAT MESSAGES --- */}
-      {chatHistory.map((entry, i) => (
-        <div
-          key={i}
-          style={{
-            marginTop: "1.2rem",
-            background: "#FFF9F5", 
-           border: "1px solid #581F18",
-            padding: "10px 15px",
-            borderRadius: "10px",
-            color: "#581F18",
-            fontFamily: "monospace",
-            fontSize: "1rem",
-            lineHeight: "1.4",
-            whiteSpace: "pre-wrap",
-            boxShadow: "0 2px 5px rgba(0,0,0,0.05)",
-          }}
-        >
-          <strong>You:</strong> {entry.question}
-          <br />
-          <strong>AI:</strong> {entry.answer}
-        </div>
-      ))}
+      {/* Historik sektion */}
+     <div style={{ marginTop: "1.5rem", display: "flex", flexDirection: "column-reverse" }}>
+        {chatHistory.map((entry, i) => (
+
+          <div
+            key={i}
+            style={{
+              marginTop: "1.2rem",
+              padding: "10px 20px",
+              borderRadius: "10px",
+              color: "#581F18",
+              border: "1px solid #F18805",
+              fontSize: "1rem",
+              lineHeight: "1.4",
+              whiteSpace: "pre-wrap",
+            }}
+          >
+            <strong style={{ color: "#8C3A0E" }}>
+              You: {entry.question}
+            </strong>
+            <br />
+            <br />
+            <strong style={{ color: "#581F18" }}>AI:</strong> {entry.answer}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

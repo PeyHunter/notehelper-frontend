@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
+import DownloadNotes from "./DownloadNotes";
+import QuizView from "./QuizView";
 
 export default function UploadSection({
   fileUploaded,
@@ -12,8 +14,15 @@ export default function UploadSection({
   setChatHistory,
   loading,
   error,
+  setFileData,
+  setNotesGenerated,
 }) {
   const centered = !fileUploaded;
+  const notesRef = useRef(null);
+  const [explaining, setExplaining] = useState(false);
+  const [viewMode, setViewMode] = useState("notes"); // "notes" | "quiz"
+  const [quizQuestions, setQuizQuestions] = useState([]);
+  const [quizLoading, setQuizLoading] = useState(false);
 
   const buttonStyle = {
     background: "white",
@@ -29,8 +38,54 @@ export default function UploadSection({
 
   const hoverColor = "#8C3A0E";
 
- 
+  const formatSummary = (summary = "") => summary.replaceAll("\r\n", "\n");
+  const markdownText = fileData?.summary ? formatSummary(fileData.summary) : "";
 
+  // --- EXPLAIN MORE ---
+  const handleExplainMore = async () => {
+    try {
+      setExplaining(true);
+      const res = await fetch("http://localhost:8080/api/explain-more", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: fileData.summary }),
+      });
+      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+      const data = await res.json();
+      setFileData({ ...fileData, summary: String(data.summary) });
+      if (data.summary && typeof setNotesGenerated === "function") {
+        setNotesGenerated(true);
+      }
+    } catch (error) {
+      console.error("❌ Explain More failed:", error);
+    } finally {
+      setExplaining(false);
+    }
+  };
+
+  // --- GENERATE QUIZ ---
+  const handleGenerateQuiz = async () => {
+    try {
+      setQuizLoading(true);
+      const res = await fetch("http://localhost:8080/api/generate-quiz", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: fileData.summary, amount: 20 }),
+      });
+      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+      const data = await res.json();
+      setQuizQuestions(
+        data.quizMarkdown || data.quiz || "### No quiz generated yet."
+      );
+      setViewMode("quiz");
+    } catch (error) {
+      console.error("❌ Quiz generation failed:", error);
+    } finally {
+      setQuizLoading(false);
+    }
+  };
+
+  // --- RENDER ---
   return (
     <div
       style={{
@@ -40,17 +95,17 @@ export default function UploadSection({
     >
       <h1
         style={{
-        color: "#581F18",
-          marginTop: centered ? "5rem" : "0",
-          marginBottom: "2rem",
-          textAlign: centered ? "center" : "left",
+          color: "#581F18",
+          marginTop: fileUploaded ? "0" : "4rem",
+          marginBottom: "1.5rem",
+          textAlign: fileUploaded ? "left" : "center",
           transition: "all 0.5s ease",
         }}
       >
         NoteHelper
       </h1>
 
-      {/* ---- BUTTONS UNDER TITLE (only visible after file upload) ---- */}
+      {/* --- KNAPPER UNDER TITEL --- */}
       {fileUploaded && (
         <div
           style={{
@@ -60,9 +115,11 @@ export default function UploadSection({
             flexWrap: "wrap",
           }}
         >
-          {/* Generate Notes */}
           <button
-            onClick={handleGenerateNotes}
+            onClick={() => {
+              if (viewMode === "quiz") setViewMode("notes");
+              else handleGenerateNotes();
+            }}
             style={buttonStyle}
             onMouseEnter={(e) => {
               e.target.style.background = hoverColor;
@@ -74,17 +131,16 @@ export default function UploadSection({
               e.target.style.color = "#581F18";
               e.target.style.borderColor = "#F18805";
             }}
-           
           >
-            Generate Notes
+            Notes
           </button>
 
-          {/* Summarize Again */}
           <button
-            onClick={() =>
-              alert("Later, this could trigger a new summary request")
-            }
-            style={buttonStyle}
+            onClick={() => {
+              if (!quizLoading) handleGenerateQuiz();
+            }}
+            style={{ ...buttonStyle, opacity: quizLoading ? 0.6 : 1 }}
+            disabled={quizLoading}
             onMouseEnter={(e) => {
               e.target.style.background = hoverColor;
               e.target.style.color = "white";
@@ -96,30 +152,14 @@ export default function UploadSection({
               e.target.style.borderColor = "#F18805";
             }}
           >
-            Summarize Again
+            {quizLoading ? "Generating..." : "Quiz"}
           </button>
 
-          {/* Clear Chat */}
-          <button
-            onClick={() => setChatHistory([])}
-            style={buttonStyle}
-            onMouseEnter={(e) => {
-              e.target.style.background = hoverColor;
-              e.target.style.color = "white";
-              e.target.style.borderColor = hoverColor;
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = "white";
-              e.target.style.color = "#581F18";
-              e.target.style.borderColor = "#F18805";
-            }}
-          >
-            Clear Chat
-          </button>
+        
         </div>
       )}
 
-      {/* ---- UPLOAD SECTION ---- */}
+      {/* --- UPLOAD SECTION --- */}
       {!fileUploaded && (
         <>
           <h3
@@ -134,7 +174,6 @@ export default function UploadSection({
           </h3>
 
           <div style={{ textAlign: "center" }}>
-            {/* --- Updated upload button (matches others) --- */}
             <label
               htmlFor="file-upload"
               style={{
@@ -171,75 +210,142 @@ export default function UploadSection({
         </>
       )}
 
-      {/* ---- FILE INFO / NOTES DISPLAY ---- */}
+      {/* --- NOTES / QUIZ VISNING --- */}
       {fileUploaded && (
         <div style={{ marginTop: "1.5rem" }}>
-          <h3 style={{ marginBottom: "1rem" }}>📄 {fileData?.fileName}</h3>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.8rem",
+              marginBottom: "1rem",
+              flexWrap: "wrap",
+            }}
+          >
+            <h3 style={{ margin: 0, color: "#581F18" }}>
+              📄 {fileData?.fileName}
+            </h3>
+
+            {notesGenerated && (
+              <button
+                onClick={handleExplainMore}
+                disabled={explaining}
+                style={{
+                  ...buttonStyle,
+                  padding: "6px 12px",
+                  fontSize: "0.85rem",
+                  opacity: explaining ? 0.6 : 1,
+                  cursor: explaining ? "not-allowed" : "pointer",
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = explaining ? "white" : hoverColor;
+                  e.target.style.color = explaining ? "#581F18" : "white";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = "white";
+                  e.target.style.color = "#581F18";
+                }}
+              >
+                {explaining ? "Analysing..." : "Explain More"}
+              </button>
+            )}
+          </div>
 
           {notesGenerated ? (
-<div
-  style={{
-    background: "#FFF9F5",
-    padding: "22px 28px",
-    borderRadius: "10px",
-    overflowY: "auto",
-    marginBottom: "70px",
-  }}
->
-  <ReactMarkdown
-    remarkPlugins={[remarkGfm, remarkBreaks]}
-    children={fileData.summary}
-    components={{
-      h3: ({node, ...props}) => (
-        <h3
-          style={{
-            fontSize: "1.55rem",
-            fontWeight: 700,
-            color: "#581F18",
-            marginTop: "1.8rem",
-            marginBottom: "0",        // ✅ zero air under title
-            lineHeight: "1.1",
-          }}
-          {...props}
-        />
-      ),
-      p: ({node, ...props}) => (
-        <p
-          style={{
-            marginTop: "0.2rem",      // ✅ almost touching the title
-            marginBottom: "0.6rem",
-            fontSize: "1rem",
-            lineHeight: "1.55",
-            color: "#581F18",
-          }}
-          {...props}
-        />
-      ),
-      hr: () => (
-      <hr
-        style={{
-          border: 0,
-          borderTop: "2px solid #F18805",     // your signature orange
-          marginTop: "2.8rem",                // ⬆️ More air before the line
-          marginBottom: "2.2rem",             // ⬇️ More air after the line
-        }}
-      />
-    ),
-      code: ({node, ...props}) => (
-        <code
-          style={{
-            background: "rgba(88,31,24,0.08)",
-            padding: "2px 5px",
-            borderRadius: "4px",
-            fontFamily: "monospace",
-            color: "#581F18",
-          }}
-          {...props}
-        />
-      ),
-    }}
-  />
-</div>
+            viewMode === "quiz" ? (
+              <QuizView quizMarkdown={quizQuestions} />
+            ) : (
+              <>
+                <div
+                  ref={notesRef}
+                  style={{
+                    background: "#FFF9F5",
+                    padding: "22px 28px",
+                    borderRadius: "10px",
+                    overflowY: "auto",
+                  }}
+                >
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm, remarkBreaks]}
+                    children={markdownText}
+                    components={{
+                      h1: ({ node, ...props }) => (
+                        <>
+                          <h1
+                            style={{
+                              fontSize: "1.6rem",
+                              fontWeight: 700,
+                              color: "#581F18",
+                              marginTop: "2rem",
+                              marginBottom: "0.6rem",
+                              lineHeight: "1.3",
+                            }}
+                            {...props}
+                          />
+                          <hr
+                            style={{
+                              border: 0,
+                              borderTop: "2px solid #F18805",
+                              margin: "0.4rem 0 1.5rem 0",
+                            }}
+                          />
+                        </>
+                      ),
+                      h2: ({ node, ...props }) => (
+                        <>
+                          <h2
+                            style={{
+                              fontSize: "1.4rem",
+                              fontWeight: 700,
+                              color: "#581F18",
+                              marginTop: "1.8rem",
+                              marginBottom: "0.5rem",
+                              lineHeight: "1.25",
+                            }}
+                            {...props}
+                          />
+                          <hr
+                            style={{
+                              border: 0,
+                              borderTop: "1px solid #F18805",
+                              margin: "0.3rem 0 1rem 0",
+                            }}
+                          />
+                        </>
+                      ),
+                      h3: ({ node, ...props }) => (
+                        <>
+                          <h3
+                            style={{
+                              fontSize: "1.2rem",
+                              fontWeight: 700,
+                              color: "#581F18",
+                              marginTop: "1.6rem",
+                              marginBottom: "0.5rem",
+                              lineHeight: "1.2",
+                            }}
+                            {...props}
+                          />
+                          <hr
+                            style={{
+                              border: 0,
+                              borderTop: "1px solid #F18805",
+                              margin: "0.3rem 0 1rem 0",
+                            }}
+                          />
+                        </>
+                      ),
+                    }}
+                  />
+                </div>
+
+                <DownloadNotes
+                  notesRef={notesRef}
+                  fileName={fileData?.fileName}
+                  markdownText={markdownText}
+                />
+              </>
+            )
           ) : (
             <p style={{ color: "#555" }}>
               Click “Generate Notes” to create a summary of this document.
