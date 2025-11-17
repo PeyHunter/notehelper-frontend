@@ -81,28 +81,46 @@ useEffect(() => {
   }
 
   return (
+
+ <div
+  style={{
+    display: "flex",
+    flexDirection: fileUploaded ? "row" : "column",
+    justifyContent: fileUploaded ? "flex-start" : "center",
+    alignItems: fileUploaded ? "flex-start" : "center",
+    textAlign: fileUploaded ? "left" : "center",
+    gap: fileUploaded ? "4rem" : "2rem",
+    padding: "3rem 2rem",
+    transition: "all 0.6s ease",
+    minHeight: "100vh",
+    background: "white", 
+  }}
+>
+    {/* VENSTRE SIDE: Upload/Noter */}
+    <UploadSection
+      fileUploaded={fileUploaded}
+      fileData={fileData}
+      notesGenerated={notesGenerated}
+      handleFileUpload={handleFileUpload}
+      handleGenerateNotes={handleGenerateNotes}
+      setChatHistory={setChatHistory}
+      loading={loading}
+      error={error}
+      setFileData={setFileData}
+      setNotesGenerated={setNotesGenerated}
+    />
+
+    {/* HØJRE SIDE: Sticky Chat wrapper */}
     <div
-      style={{
-        display: "flex",
-        flexDirection: fileUploaded ? "row" : "column",
-        justifyContent: "flex-start",
-        alignItems: fileUploaded ? "flex-start" : "center",
-        gap: "4rem",
-        padding: "3rem 2rem",
-        height: "100vh",
-        transition: "all 0.6s ease",
-      }}
-    >
-      <UploadSection
-        fileUploaded={fileUploaded}
-        fileData={fileData}
-        notesGenerated={notesGenerated}
-        handleFileUpload={handleFileUpload}
-        handleGenerateNotes={handleGenerateNotes}
-        setChatHistory={setChatHistory}
-        loading={loading}
-        error={error}
-      />
+  style={{
+    position: "sticky",
+    top: "1rem",
+    alignSelf: "flex-start",
+    height: "fit-content",
+    flex: "0 0 800px", // bredere fast kolonne
+    maxWidth: "1200px", // så den ikke bliver for voldsom på store skærme
+  }}
+>
       <ChatSection
         fileUploaded={fileUploaded}
         input={input}
@@ -112,7 +130,8 @@ useEffect(() => {
         loading={loading}
       />
     </div>
-  );
+  </div>
+);
 }
 
 export default App;
