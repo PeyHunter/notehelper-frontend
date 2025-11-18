@@ -5,8 +5,9 @@ import remarkBreaks from "remark-breaks";
 import DownloadNotes from "./DownloadNotes";
 import QuizView from "./QuizView";
 
+
 export default function UploadSection({
-  fileUploaded,
+  fileUploaded, /*----Her impoteres de forskellige props fra APP, ----*/
   fileData,
   notesGenerated,
   handleFileUpload,
@@ -17,26 +18,13 @@ export default function UploadSection({
   setFileData,
   setNotesGenerated,
 }) {
+
   const centered = !fileUploaded;
   const notesRef = useRef(null);
   const [explaining, setExplaining] = useState(false);
-  const [viewMode, setViewMode] = useState("notes"); // "notes" | "quiz"
+  const [viewMode, setViewMode] = useState("notes");
   const [quizQuestions, setQuizQuestions] = useState([]);
   const [quizLoading, setQuizLoading] = useState(false);
-
-  const buttonStyle = {
-    background: "white",
-    color: "#581F18",
-    border: "1px solid #F18805",
-    padding: "10px 18px",
-    borderRadius: "13px",
-    cursor: "pointer",
-    fontWeight: "500",
-    transition: "all 0.3s ease",
-    outline: "none",
-  };
-
-  const hoverColor = "#8C3A0E";
 
   const formatSummary = (summary = "") => summary.replaceAll("\r\n", "\n");
   const markdownText = fileData?.summary ? formatSummary(fileData.summary) : "";
@@ -85,166 +73,88 @@ export default function UploadSection({
     }
   };
 
-  // --- RENDER ---
   return (
     <div
+    /*--Her er hovedcontaineren--*/
+      className={`upload-section ${centered ? "centered" : ""}`}
       style={{
         flex: fileUploaded ? 1 : "none",
         transition: "all 0.5s ease",
       }}
     >
-      <h1
+      <h1 /*--H1, som er stabil--*/
+        className="upload-title"
         style={{
-          color: "#581F18",
           marginTop: fileUploaded ? "0" : "4rem",
-          marginBottom: "1.5rem",
           textAlign: fileUploaded ? "left" : "center",
-          transition: "all 0.5s ease",
         }}
       >
         NoteHelper
       </h1>
 
-      {/* --- KNAPPER UNDER TITEL --- */}
-      {fileUploaded && (
-        <div
-          style={{
-            display: "flex",
-            gap: "1rem",
-            marginBottom: "2rem",
-            flexWrap: "wrap",
-          }}
-        >
-          <button
-            onClick={() => {
-              if (viewMode === "quiz") setViewMode("notes");
-              else handleGenerateNotes();
-            }}
-            style={buttonStyle}
-            onMouseEnter={(e) => {
-              e.target.style.background = hoverColor;
-              e.target.style.color = "white";
-              e.target.style.borderColor = hoverColor;
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = "white";
-              e.target.style.color = "#581F18";
-              e.target.style.borderColor = "#F18805";
-            }}
-          >
-            Notes
-          </button>
-
-          <button
-            onClick={() => {
-              if (!quizLoading) handleGenerateQuiz();
-            }}
-            style={{ ...buttonStyle, opacity: quizLoading ? 0.6 : 1 }}
-            disabled={quizLoading}
-            onMouseEnter={(e) => {
-              e.target.style.background = hoverColor;
-              e.target.style.color = "white";
-              e.target.style.borderColor = hoverColor;
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = "white";
-              e.target.style.color = "#581F18";
-              e.target.style.borderColor = "#F18805";
-            }}
-          >
-            {quizLoading ? "Generating..." : "Quiz"}
-          </button>
-
-        
-        </div>
-      )}
-
-      {/* --- UPLOAD SECTION --- */}
+      {/* FORSIDEN - her vises state når en file IKKE er uploaded */}
       {!fileUploaded && (
         <>
-          <h3
-            style={{
-              textAlign: "center",
-              color: "#555",
-              marginBottom: "2rem",
-              fontWeight: "normal",
-            }}
-          >
-            Upload a file to get started
-          </h3>
+          <h3 className="upload-subtitle">Upload a file to get started</h3>
 
-          <div style={{ textAlign: "center" }}>
-            <label
-              htmlFor="file-upload"
-              style={{
-                ...buttonStyle,
-                display: "inline-block",
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = hoverColor;
-                e.target.style.color = "white";
-                e.target.style.borderColor = hoverColor;
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = "white";
-                e.target.style.color = "#581F18";
-                e.target.style.borderColor = "#F18805";
-              }}
-            >
+          <div className="upload-center">
+            <label htmlFor="file-upload" className="btn">
               Choose File
             </label>
 
-            <input
-              id="file-upload"
+            <input 
+              id="file-upload" /*----e.target fra APP rammer den her del ----*/
               type="file"
               accept=".txt,.pdf"
               onChange={handleFileUpload}
               style={{ display: "none" }}
             />
 
-            {loading && <p style={{ color: "#666" }}>Analysing...</p>}
-            {error && (
-              <p style={{ color: "red", marginTop: "1rem" }}>Error: {error}</p>
-            )}
+            {loading && <p className="upload-status">Analysing...</p>}
+            {error && <p className="upload-error">Error: {error}</p>}
           </div>
         </>
       )}
 
-      {/* --- NOTES / QUIZ VISNING --- */}
+       {/* FILE UPLOADED + BUTTON DEL */}
       {fileUploaded && (
-        <div style={{ marginTop: "1.5rem" }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.8rem",
-              marginBottom: "1rem",
-              flexWrap: "wrap",
+        <div className="upload-buttons">
+          <button
+            className="btn"
+            onClick={() => {
+              if (viewMode === "quiz") setViewMode("notes");
+              else handleGenerateNotes();
             }}
           >
-            <h3 style={{ margin: 0, color: "#581F18" }}>
-              📄 {fileData?.fileName}
-            </h3>
+            Notes
+          </button>
+
+          <button
+            className={`btn ${quizLoading ? "disabled" : ""}`}
+            onClick={() => {
+              if (!quizLoading) handleGenerateQuiz();
+            }}
+            disabled={quizLoading}
+          >
+            {quizLoading ? "Generating..." : "Quiz"}
+          </button>
+        </div>
+      )}
+
+     
+       {/* FILE UPLOADED + NOTES OG QUIZ */}
+      {fileUploaded && (
+        <div className="notes-wrapper">
+          <div className="file-info">
+            <h3 className="file-name">📄 {fileData?.fileName}</h3>
 
             {notesGenerated && (
               <button
+                className={`btn explain-btn ${
+                  explaining ? "disabled" : ""
+                }`}
                 onClick={handleExplainMore}
                 disabled={explaining}
-                style={{
-                  ...buttonStyle,
-                  padding: "6px 12px",
-                  fontSize: "0.85rem",
-                  opacity: explaining ? 0.6 : 1,
-                  cursor: explaining ? "not-allowed" : "pointer",
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = explaining ? "white" : hoverColor;
-                  e.target.style.color = explaining ? "#581F18" : "white";
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = "white";
-                  e.target.style.color = "#581F18";
-                }}
               >
                 {explaining ? "Analysing..." : "Explain More"}
               </button>
@@ -256,89 +166,15 @@ export default function UploadSection({
               <QuizView quizMarkdown={quizQuestions} />
             ) : (
               <>
-                <div
-                  ref={notesRef}
-                  style={{
-                    background: "#FFF9F5",
-                    padding: "22px 28px",
-                    borderRadius: "10px",
-                    overflowY: "auto",
-                  }}
-                >
+                <div ref={notesRef} className="notes-container">
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm, remarkBreaks]}
                     children={markdownText}
-                    components={{
-                      h1: ({ node, ...props }) => (
-                        <>
-                          <h1
-                            style={{
-                              fontSize: "1.6rem",
-                              fontWeight: 700,
-                              color: "#581F18",
-                              marginTop: "2rem",
-                              marginBottom: "0.6rem",
-                              lineHeight: "1.3",
-                            }}
-                            {...props}
-                          />
-                          <hr
-                            style={{
-                              border: 0,
-                              borderTop: "2px solid #F18805",
-                              margin: "0.4rem 0 1.5rem 0",
-                            }}
-                          />
-                        </>
-                      ),
-                      h2: ({ node, ...props }) => (
-                        <>
-                          <h2
-                            style={{
-                              fontSize: "1.4rem",
-                              fontWeight: 700,
-                              color: "#581F18",
-                              marginTop: "1.8rem",
-                              marginBottom: "0.5rem",
-                              lineHeight: "1.25",
-                            }}
-                            {...props}
-                          />
-                          <hr
-                            style={{
-                              border: 0,
-                              borderTop: "1px solid #F18805",
-                              margin: "0.3rem 0 1rem 0",
-                            }}
-                          />
-                        </>
-                      ),
-                      h3: ({ node, ...props }) => (
-                        <>
-                          <h3
-                            style={{
-                              fontSize: "1.2rem",
-                              fontWeight: 700,
-                              color: "#581F18",
-                              marginTop: "1.6rem",
-                              marginBottom: "0.5rem",
-                              lineHeight: "1.2",
-                            }}
-                            {...props}
-                          />
-                          <hr
-                            style={{
-                              border: 0,
-                              borderTop: "1px solid #F18805",
-                              margin: "0.3rem 0 1rem 0",
-                            }}
-                          />
-                        </>
-                      ),
-                    }}
                   />
                 </div>
 
+
+          {/* DOWNLOAD NOTES */}
                 <DownloadNotes
                   notesRef={notesRef}
                   fileName={fileData?.fileName}
@@ -347,7 +183,7 @@ export default function UploadSection({
               </>
             )
           ) : (
-            <p style={{ color: "#555" }}>
+            <p className="upload-hint">
               Click “Generate Notes” to create a summary of this document.
             </p>
           )}
