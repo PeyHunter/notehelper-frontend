@@ -2,21 +2,10 @@ import React, { useState } from "react";
 import { Document, Packer, Paragraph, TextRun } from "docx";
 import { saveAs } from "file-saver";
 import pdfMake from "pdfmake/build/pdfmake";
+import "./DownloadNotes.css"; // 👈 ny CSS-fil
 
 export default function DownloadNotes({ fileName, markdownText }) {
-  const [downloadType, setDownloadType] = useState("PDF");
-
-  const buttonStyle = {
-    background: "white",
-    color: "#581F18",
-    border: "1px solid #F18805",
-    padding: "10px 25px",
-    borderRadius: "13px",
-    cursor: "pointer",
-    fontWeight: "600",
-    transition: "all 0.3s ease",
-    outline: "none",
-  };
+  const [downloadType, setDownloadType] = useState("PDF"); // Bestemmer hvilken type document det skal downloades som
 
   // -------- PDF DOWNLOAD --------
   const handleDownloadPDF = async () => {
@@ -33,10 +22,7 @@ export default function DownloadNotes({ fileName, markdownText }) {
       lines.forEach((line) => {
         if (line.startsWith("```")) {
           if (inCode) {
-            content.push({
-              text: codeBuffer.join("\n"),
-              style: "code",
-            });
+            content.push({ text: codeBuffer.join("\n"), style: "code" });
             codeBuffer = [];
           }
           inCode = !inCode;
@@ -115,7 +101,6 @@ export default function DownloadNotes({ fileName, markdownText }) {
     let inCode = false;
     let buffer = [];
 
-    // Funktion til at tilføje kodeblok
     const pushCode = () => {
       paragraphs.push(
         new Paragraph({
@@ -128,7 +113,6 @@ export default function DownloadNotes({ fileName, markdownText }) {
       buffer = [];
     };
 
-    // Gennemgå alle linjer i Markdown
     for (const line of lines) {
       if (codeBlockStartRegex.test(line)) {
         if (inCode) pushCode();
@@ -176,85 +160,40 @@ export default function DownloadNotes({ fileName, markdownText }) {
       }
     }
 
-    const doc = new Document({
-      sections: [{ children: paragraphs }],
-    });
-
+    const doc = new Document({ sections: [{ children: paragraphs }] });
     const blob = await Packer.toBlob(doc);
     saveAs(blob, `${fileName?.replace(/\.[^/.]+$/, "") || "notes"}.docx`);
   };
 
-  // -------- HANDLE DOWNLOAD SELECTOR --------
+  // Tjekker den downloadType der er valgt, og sender den videre
   const handleDownload = () => {
     downloadType === "Word" ? handleDownloadWord() : handleDownloadPDF();
   };
 
+
+  // INDHOLDET SOM VISES - 
   return (
-    <div
-      style={{ textAlign: "center", marginTop: "2rem", marginBottom: "2rem" }}
-    >
+    <div className="download-section">
       {/* SWITCH mellem PDF og Word */}
       <div
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: "1rem",
-          marginBottom: "1.2rem",
-        }}
+        className="download-toggle"
+        onClick={() =>
+          setDownloadType(downloadType === "PDF" ? "Word" : "PDF")
+        }
       >
-        <span style={{ color: "#581F18", fontWeight: "600" }}>PDF</span>
-
+        <span className="toggle-label">PDF</span>
         <div
-          style={{
-            width: "60px",
-            height: "30px",
-            background: "#F18805",
-            borderRadius: "30px",
-            position: "relative",
-            cursor: "pointer",
-            transition: "all 0.3s ease",
-          }}
-          onClick={() =>
-            setDownloadType(downloadType === "PDF" ? "Word" : "PDF")
-          }
-        >
-          <div
-            style={{
-              width: "24px",
-              height: "24px",
-              background: "white",
-              borderRadius: "50%",
-              position: "absolute",
-              top: "3px",
-              left: downloadType === "PDF" ? "3px" : "33px",
-              transition: "all 0.3s ease",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-            }}
-          />
-        </div>
-
-        <span style={{ color: "#581F18", fontWeight: "600" }}>Word</span>
+          className={`toggle-switch ${
+            downloadType === "Word" ? "switch-right" : "switch-left"
+          }`}
+        ></div>
+        <span className="toggle-label">Word</span>
       </div>
 
       {/* DOWNLOAD BUTTON */}
-      <div>
-        <button
-          onClick={handleDownload}
-          style={buttonStyle}
-          onMouseEnter={(e) => {
-            e.target.style.background = "#F18805";
-            e.target.style.color = "white";
-            e.target.style.borderColor = "#F18805";
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.background = "white";
-            e.target.style.color = "#581F18";
-            e.target.style.borderColor = "#F18805";
-          }}
-        >
-          Download Notes as {downloadType}
-        </button>
-      </div>
+      <button className="download-btn" onClick={handleDownload}>
+        Download Notes as {downloadType}
+      </button>
     </div>
   );
 }
