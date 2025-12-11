@@ -167,6 +167,7 @@ export default function UploadSection({
             ) : (
               <>
                 <div ref={notesRef} className="notes-container">
+                {/* React Markdown gennemgår din tekst ogoversætter Markdown‑syntaks til HTML‑tags.*/}
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm, remarkBreaks]}
                     children={markdownText}
