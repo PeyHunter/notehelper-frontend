@@ -2,11 +2,15 @@ import React, { useState } from "react";
 import { Document, Packer, Paragraph, TextRun } from "docx";
 import { saveAs } from "file-saver";
 import pdfMake from "pdfmake/build/pdfmake";
-import "./DownloadNotes.css"; // 👈 ny CSS-fil
+
 
 export default function DownloadNotes({ fileName, markdownText }) {
   const [downloadType, setDownloadType] = useState("PDF"); // Bestemmer hvilken type document det skal downloades som
 
+
+
+
+  
   // -------- PDF DOWNLOAD --------
   const handleDownloadPDF = async () => {
     try {
@@ -172,8 +176,13 @@ export default function DownloadNotes({ fileName, markdownText }) {
 
 
   // INDHOLDET SOM VISES - 
-  return (
+return (
     <div className="download-section">
+      {/* Format tekst over toggle */}
+      <div className="download-format-label">
+        {downloadType === "PDF" ? "PDF Format" : "Word Format"}
+      </div>
+      
       {/* SWITCH mellem PDF og Word */}
       <div
         className="download-toggle"
@@ -181,13 +190,17 @@ export default function DownloadNotes({ fileName, markdownText }) {
           setDownloadType(downloadType === "PDF" ? "Word" : "PDF")
         }
       >
-        <span className="toggle-label">PDF</span>
         <div
           className={`toggle-switch ${
             downloadType === "Word" ? "switch-right" : "switch-left"
           }`}
         ></div>
-        <span className="toggle-label">Word</span>
+      </div>
+
+      {/* Format tekst under toggle */}
+      <div className="format-labels">
+        <span className={`format-label ${downloadType === "PDF" ? "active" : ""}`}>PDF</span>
+        <span className={`format-label ${downloadType === "Word" ? "active" : ""}`}>Word</span>
       </div>
 
       {/* DOWNLOAD BUTTON */}

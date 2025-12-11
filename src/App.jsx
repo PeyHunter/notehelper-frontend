@@ -71,7 +71,7 @@ function App() {
     formData.append("file", file);
 
     try {  /*--Her sendes filen til backend-*/
-        const res = await fetch("http://localhost:8080/api/upload", {
+      const res = await fetch("http://localhost:8080/api/upload", {
         method: "POST",
         body: formData,
       });
@@ -95,7 +95,7 @@ function App() {
   /*-Styrer chat sekctionen-*/
   async function handleSend() {
     if (input.trim().length === 0) return;
-    setLoading(true); 
+    setLoading(true);
     setError(null);
 
     try { /*--POST request sendes til backend-*/
@@ -132,9 +132,9 @@ function App() {
         */
     <div
       className={`app-container ${fileUploaded ? "row-layout" : "column-layout"}`}
-    > 
+    >
       <UploadSection
-      /*Her sendes props videre*/
+        /*Her sendes props videre*/
         fileUploaded={fileUploaded}
         fileData={fileData}
         notesGenerated={notesGenerated}
@@ -148,7 +148,7 @@ function App() {
       />
 
       <div className="chat-wrapper">
-        
+
         <ChatSection
           fileUploaded={fileUploaded}
           input={input}
