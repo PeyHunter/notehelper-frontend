@@ -71,7 +71,7 @@ function App() {
     formData.append("file", file);
 
     try {  /*--Her sendes filen til backend-*/
-      const res = await fetch("http://localhost:8080/api/upload", {
+       const res = await fetch("/api/upload", {
         method: "POST",
         body: formData,
       });
@@ -99,7 +99,7 @@ function App() {
     setError(null);
 
     try { /*--POST request sendes til backend-*/
-      const res = await fetch("http://localhost:8080/api/analyse-with-file", {
+      const res = await fetch("/api/analyse-with-file", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
